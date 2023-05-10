@@ -299,6 +299,11 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &542660184 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1131961649510809067, guid: f7fc3dfb79983e7469768241da0bd121, type: 3}
+  m_PrefabInstance: {fileID: 1131961647996969642}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &590141369
 GameObject:
   m_ObjectHideFlags: 0
@@ -18028,6 +18033,27 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1131961649510809071, guid: f7fc3dfb79983e7469768241da0bd121, type: 3}
   m_PrefabInstance: {fileID: 1131961647996969642}
   m_PrefabAsset: {fileID: 0}
+--- !u!50 &1712045376
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 542660184}
+  m_BodyType: 1
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0
+  m_AngularDrag: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 0}
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0
 --- !u!1 &1720689264
 GameObject:
   m_ObjectHideFlags: 0
@@ -18203,6 +18229,10 @@ PrefabInstance:
       propertyPath: exclamation
       value: 
       objectReference: {fileID: 1855712341}
+    - target: {fileID: 1131961649510809064, guid: f7fc3dfb79983e7469768241da0bd121, type: 3}
+      propertyPath: slashPrefab
+      value: 
+      objectReference: {fileID: 7343998313538825932, guid: 1617f97a719e2c74c947fca380f3e2b1, type: 3}
     - target: {fileID: 1131961649510809064, guid: f7fc3dfb79983e7469768241da0bd121, type: 3}
       propertyPath: currentBehaviour
       value: 3

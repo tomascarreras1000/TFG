@@ -14,6 +14,7 @@ public class EnemyController : MonoBehaviour
     private float turnTimer = 0.0f;
 
     // Behaviour
+    private bool isAlive = true;
 
     // Patrol
     private GameObject currentPatrolPoint;
@@ -28,6 +29,7 @@ public class EnemyController : MonoBehaviour
     private Transform target = null;
     private float attackTimer = 0.0f;
     private bool isAttacking = false;
+    private GameObject slashEffect;
 
     private enum EnemyBehaviours
     {
@@ -60,6 +62,7 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float attackSpeed;
     [SerializeField] private LayerMask detectionLayers;
     [SerializeField] private GameObject exclamation;
+    [SerializeField] private GameObject slashPrefab;
 
 
     private void Start()
@@ -81,6 +84,9 @@ public class EnemyController : MonoBehaviour
 
     private void Update()
     {
+        if (!isAlive)
+            return;
+
         CheckTimers();
         CheckLedge();
         CheckCollision();
@@ -275,11 +281,23 @@ public class EnemyController : MonoBehaviour
     private void AddAttackColliders()
     {
         colliders[1].enabled = true;
+        if (slashEffect == null)
+        {
+            if (isFacingLeft)
+                slashEffect = Instantiate(slashPrefab, transform.position, transform.rotation, transform.parent);
+            else
+            {
+                slashEffect = Instantiate(slashPrefab, transform.position, transform.rotation, transform.parent);
+                slashEffect.transform.localScale = new Vector3(slashEffect.transform.localScale.x * -1.0f, slashEffect.transform.localScale.y, slashEffect.transform.localScale.z);
+            }
+        }
     }
     private void EndAttack()
     {
         attackTimer = attackSpeed;
         colliders[1].enabled = false;
+        if (slashEffect != null)
+            Destroy(slashEffect);
     }
 
     private void Turn()
@@ -304,5 +322,21 @@ public class EnemyController : MonoBehaviour
     {
         isAttacking = setTo;
         animator.SetBool("isAttacking", isAttacking);
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("PlayerAttack") && isAlive)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        isAlive = false;
+        animator.SetTrigger("Death");
+        collider.enabled = false;
+        EndAttack(); // This is to prevent a bug where if the crab dies while on his attack animation this would never be called and the trigger would stay active
     }
 }

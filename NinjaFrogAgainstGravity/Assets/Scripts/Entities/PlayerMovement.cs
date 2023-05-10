@@ -283,7 +283,10 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
                 if (isFacingRight)
                     slash = Instantiate(slashPrefab, new Vector3(transform.position.x + 2, transform.position.y, transform.position.z), transform.rotation);
                 else
+                {
                     slash = Instantiate(slashPrefab, new Vector3(transform.position.x - 2, transform.position.y, transform.position.z), transform.rotation);
+                    slash.transform.localScale = new Vector3(slash.transform.localScale.x * -1.0f, slash.transform.localScale.y, slash.transform.localScale.z);
+                }
             }
         }
     }
@@ -985,13 +988,5 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private void Die()
     {
         SceneManager.LoadScene("Map02");
-    }
-
-    public void DestroySlash()
-    {
-        if (slash != null)
-        {
-            Destroy(slash);
-        }
     }
 }
