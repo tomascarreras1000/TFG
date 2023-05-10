@@ -59,6 +59,7 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float attackRange;
     [SerializeField] private float attackSpeed;
     [SerializeField] private LayerMask detectionLayers;
+    [SerializeField] private GameObject exclamation;
 
 
     private void Start()
@@ -91,6 +92,13 @@ public class EnemyController : MonoBehaviour
 
         if (target)
         {
+            if (exclamation)
+            {
+                if (!exclamation.activeInHierarchy)
+                {
+                    exclamation.SetActive(true);
+                }
+            }
             if (Mathf.Abs(target.position.x - transform.position.x) <= attackRange)
             {
                 // Attack
@@ -106,6 +114,14 @@ public class EnemyController : MonoBehaviour
 
             return;
         }
+        else if (exclamation)
+        {
+            if (exclamation.activeInHierarchy)
+            {
+                exclamation.SetActive(false);
+            }
+        }
+
 
         switch (currentBehaviour)
         {

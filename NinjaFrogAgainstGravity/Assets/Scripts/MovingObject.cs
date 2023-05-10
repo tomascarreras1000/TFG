@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Platform : MonoBehaviour
+public class MovingObject : MonoBehaviour
 {
     [SerializeField] private GameObject[] patrolPoints;
     private GameObject currentPatrolPoint;
@@ -15,7 +15,7 @@ public class Platform : MonoBehaviour
 
     private Animator animator;
     private bool hasAnimator;
-    [SerializeField] bool isFacingLeft = true;
+    private bool isFacingLeft = true;
 
     private bool isResting = false;
     private float restTimer = 0.0f;

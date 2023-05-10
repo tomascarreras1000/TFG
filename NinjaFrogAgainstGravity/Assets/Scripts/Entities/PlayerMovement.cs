@@ -91,6 +91,11 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     [SerializeField] private float fallGravityMult;
     [SerializeField] private float iFrames; // In seconds
 
+    // Combat
+    [Header("Combat Logic")]
+    [SerializeField] private GameObject slashPrefab;
+    private GameObject slash = null;
+
     // Timers
     private float lastPressedJumpTimer; 
     private float lastOnGroundTimer;    
@@ -100,7 +105,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private float lastOnGravityFieldTimer;
     private float iFramesTimer;
 
-
+    
 
 
 
@@ -273,7 +278,13 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
 
         if (Input.GetKeyDown(KeyCode.N))
         {
-            Debug.Log("Stop");
+            if (slash == null)
+            {
+                if (isFacingRight)
+                    slash = Instantiate(slashPrefab, new Vector3(transform.position.x + 2, transform.position.y, transform.position.z), transform.rotation);
+                else
+                    slash = Instantiate(slashPrefab, new Vector3(transform.position.x - 2, transform.position.y, transform.position.z), transform.rotation);
+            }
         }
     }
 
@@ -974,5 +985,13 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private void Die()
     {
         SceneManager.LoadScene("Map02");
+    }
+
+    public void DestroySlash()
+    {
+        if (slash != null)
+        {
+            Destroy(slash);
+        }
     }
 }
