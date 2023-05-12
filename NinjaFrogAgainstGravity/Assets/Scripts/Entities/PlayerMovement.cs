@@ -51,15 +51,17 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private bool isFacingRight = true;
     private bool isDoubleJumpUp;
     private bool isGrounded;
+
+    // Basic Logic 
+    [Header("Basic Logic")]
+    [SerializeField] private int maxHP;
     private int currentHP;
-    private int maxHP;
     private int pinappleCount;
 
-
-    // Movement Logic
-    [Header("Movement Logic")]
     private float deltaX = 0.0f;
+    private bool canMove = true;
     //private int deltaY = 0;
+    [Header("Movement Logic")]
     [SerializeField] private float maxFallSpeed;
     [SerializeField] private float runMaxSpeed;
     [SerializeField] private float runAccelAmount;
@@ -95,6 +97,8 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     [Header("Combat Logic")]
     [SerializeField] private GameObject slashPrefab;
     private GameObject slash = null;
+    [SerializeField] private float attackRange;
+    [SerializeField] private float attackSpeed;
 
     // Timers
     private float lastPressedJumpTimer; 
@@ -104,8 +108,9 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private float lastOnWallTimer;
     private float lastOnGravityFieldTimer;
     private float iFramesTimer;
+    private float attackTimer;
 
-    
+
 
 
 
@@ -129,8 +134,8 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
 
         PINAPPLE = 1
     }
-    public static event Action<int> OnPlayerDamaged;
-    public static event Action<Collectables, int> OnPickUp;
+    public static event Action<int> OnHealthChange;
+    public static event Action<int> OnPickUp;
 
     private float maxHeight = 0.0f;
 
@@ -155,7 +160,10 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         isGrounded = IsGrounded(Vector2.down);
         gravityMag = Physics.gravity.y;
 
-        //currentHP = 3;
+        currentHP = maxHP;
+        OnHealthChange(currentHP);
+        pinappleCount = 0;
+        OnPickUp(pinappleCount);
     }
 
     private void Update()
@@ -188,6 +196,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         lastPressedJumpTimer -= Time.deltaTime;
         lastOnGravityFieldTimer -= Time.deltaTime;
         iFramesTimer -= Time.deltaTime;
+        attackTimer -= Time.deltaTime;
     }
 
     private void CheckInputs()
@@ -202,8 +211,8 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         //    gravityDirection = gravityDirectionQueue[0];
         //    Rotate();
         //}
-        
-        
+
+
 
         deltaX = 0.0f;
         if (Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D))        // Left
@@ -281,13 +290,18 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
             if (slash == null)
             {
                 if (isFacingRight)
-                    slash = Instantiate(slashPrefab, new Vector3(transform.position.x + 2, transform.position.y, transform.position.z), transform.rotation);
+                    slash = Instantiate(slashPrefab, new Vector3(transform.position.x + 1.5f, transform.position.y, transform.position.z), transform.rotation);
                 else
                 {
-                    slash = Instantiate(slashPrefab, new Vector3(transform.position.x - 2, transform.position.y, transform.position.z), transform.rotation);
+                    slash = Instantiate(slashPrefab, new Vector3(transform.position.x - 1.5f, transform.position.y, transform.position.z), transform.rotation);
                     slash.transform.localScale = new Vector3(slash.transform.localScale.x * -1.0f, slash.transform.localScale.y, slash.transform.localScale.z);
                 }
             }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
         }
     }
 
@@ -596,13 +610,13 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
 
     void OnRestart()
     {
-        transform.position = spawnPoint.position;
-        rigidbody.velocity = new Vector2(0.0f,0.0f);
+        //transform.position = spawnPoint.position;
+        //rigidbody.velocity = new Vector2(0.0f,0.0f);
 
         //isDoubleJumpUp = false;
 
-        maxHP = 3;
-        currentHP = maxHP;
+        //maxHP = 3;
+        //currentHP = maxHP;
         
         //OnPlayerDamaged(currentHP);
         //pinappleCount = 0;
@@ -613,19 +627,15 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     {
         if (collision.gameObject.CompareTag("Pinapple"))
         {
-            Debug.Log("Pinapple Collected");
             pinappleCount++;
-            OnPickUp(Collectables.PINAPPLE, pinappleCount);
+            OnPickUp(pinappleCount);
+
             if (currentHP < maxHP)
             {
                 currentHP++;
-                OnPlayerDamaged(currentHP);
+                OnHealthChange(currentHP);
             }
             Destroy(collision.gameObject);
-        }
-        else if (collision.gameObject.CompareTag("Platform"))
-        {
-            transform.SetParent(collision.transform);
         }
         else if (collision.gameObject.CompareTag("Trap") || collision.gameObject.CompareTag("Enemy"))
         {
@@ -801,6 +811,9 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
 
     private void Run()
     {
+        if (!canMove)
+            return;
+
         //Calculate the direction we want to move in and our desired velocity
         float targetSpeed = deltaX * runMaxSpeed;
 
@@ -972,20 +985,35 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         if (iFramesTimer > 0.0f) // Virtually no hit
             return;
 
-        Debug.Log("Ouch!");
-
         currentHP--;
+        OnHealthChange(currentHP);
+
         if (currentHP <= 0)
         {
             Die();
         }
         else
         {
+            animator.SetTrigger("Hit");
+            canMove = false;
             iFramesTimer = iFrames;
+            rigidbody.AddForce(new Vector2(transform.localScale.x * -15.0f, 0.0f), ForceMode2D.Impulse);
         }
     }
 
     private void Die()
+    {
+        animator.SetTrigger("Death");
+        collider.enabled = false;
+        rigidbody.bodyType = RigidbodyType2D.Static;
+    }
+
+    private void EndHitAnimation()
+    {
+        canMove = true;
+    }
+
+    private void EndDeathAnimation()
     {
         SceneManager.LoadScene("Map02");
     }
