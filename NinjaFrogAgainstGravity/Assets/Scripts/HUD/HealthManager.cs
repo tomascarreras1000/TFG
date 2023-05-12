@@ -13,11 +13,11 @@ public class HealthManager : MonoBehaviour
     }
     private void OnEnable()
     {
-        PlayerMovement.OnPlayerDamaged += UpdateHealth;
+        PlayerMovement.OnHealthChange += UpdateHealth;
     }
     private void OnDisable()
     {
-        PlayerMovement.OnPlayerDamaged -= UpdateHealth;
+        PlayerMovement.OnHealthChange -= UpdateHealth;
     }
     private void UpdateHealth(int health)
     {
