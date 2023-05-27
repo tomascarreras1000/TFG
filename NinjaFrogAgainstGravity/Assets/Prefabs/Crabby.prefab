@@ -107,9 +107,9 @@ GameObject:
   - component: {fileID: 1131961649510809071}
   - component: {fileID: 1131961649510809070}
   - component: {fileID: 1131961649510809065}
+  - component: {fileID: 1783455559}
   - component: {fileID: 1131961649510809064}
   - component: {fileID: 1131961649510809068}
-  - component: {fileID: 1783455559}
   m_Layer: 0
   m_Name: Crabby
   m_TagString: Enemy
@@ -210,6 +210,32 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 2.2845612, y: 0.98722863}
   m_EdgeRadius: 0
+--- !u!61 &1783455559
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1131961649510809067}
+  m_Enabled: 0
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0.14, y: -0.30717766}
+  m_SpriteTilingProperty:
+    border: {x: 1.0625, y: 0.1875, z: 0.8125, w: 0.375}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 4.5, y: 2}
+    newSize: {x: 2.625, y: 2.625}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 4.248456, y: 0.79954314}
+  m_EdgeRadius: 0
 --- !u!114 &1131961649510809064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -240,6 +266,8 @@ MonoBehaviour:
   detectionLayers:
     serializedVersion: 2
     m_Bits: 192
+  exclamationPrefab: {fileID: 371170019054546090, guid: 2ef0926b7bd7ae447af6a20c1949b433, type: 3}
+  slashPrefab: {fileID: 7343998313538825932, guid: 1617f97a719e2c74c947fca380f3e2b1, type: 3}
 --- !u!95 &1131961649510809068
 Animator:
   serializedVersion: 4
@@ -260,29 +288,3 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!61 &1783455559
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1131961649510809067}
-  m_Enabled: 0
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0.14, y: -0.30717766}
-  m_SpriteTilingProperty:
-    border: {x: 1.0625, y: 0.1875, z: 0.8125, w: 0.375}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 4.5, y: 2}
-    newSize: {x: 2.625, y: 2.625}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  serializedVersion: 2
-  m_Size: {x: 4.248456, y: 0.79954314}
-  m_EdgeRadius: 0

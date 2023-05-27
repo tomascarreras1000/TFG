@@ -13,11 +13,32 @@ public class TotemPart : MonoBehaviour
     [SerializeField] private float attackRate;
     private float attackTimer;
     private Animator animator;
+    private Vector3 spikePos;
 
     private void Start()
     {
         currentHp = maxHp;
         animator = GetComponent<Animator>();
+
+        if (transform.rotation.eulerAngles.z == 270.0f)
+        {
+            // To the right
+            spikePos = new Vector3(transform.position.x - 0.6f, transform.position.y + 1.25f * transform.localScale.x, transform.position.z);
+        }
+        else if (transform.rotation.eulerAngles.z == 180.0f)
+        {
+            // Up
+            spikePos = new Vector3(transform.position.x + 1.25f * transform.localScale.x, transform.position.y + 0.6f, transform.position.z);
+        }
+        else if (transform.rotation.eulerAngles.z == 90.0f)
+        {
+            // To the left
+            spikePos = new Vector3(transform.position.x + 0.6f, transform.position.y - 1.25f * transform.localScale.x, transform.position.z);
+        }
+        else
+        {
+            spikePos = new Vector3(transform.position.x - 1.25f * transform.localScale.x, transform.position.y - 0.6f, transform.position.z);
+        }
     }
 
     private void Update()
@@ -43,6 +64,7 @@ public class TotemPart : MonoBehaviour
                 Hit();
         }
     }
+
 
     private void Hit()
     {
@@ -70,7 +92,7 @@ public class TotemPart : MonoBehaviour
 
     private void Shoot()
     {
-        GameObject spike = Instantiate(spikePrefab, new Vector3(transform.position.x - 1.25f * transform.localScale.x, transform.position.y - 0.6f, transform.position.z), transform.rotation);
+        GameObject spike = Instantiate(spikePrefab, spikePos, transform.rotation);
         spike.transform.localScale = transform.localScale;
     }
 }

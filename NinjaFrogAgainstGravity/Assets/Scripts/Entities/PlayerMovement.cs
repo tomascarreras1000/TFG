@@ -30,9 +30,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     }
 
     private GravityDirection gravityDirection = GravityDirection.DOWN;
-    private GravityDirection gravityDirectionBuffer = GravityDirection.DOWN;
-
-    private List<GravityDirection> gravityDirectionQueue = new List<GravityDirection>();
 
     private enum MovementState
     {
@@ -92,6 +89,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     [SerializeField] private float jumpHangGravityMult;
     [SerializeField] private float fallGravityMult;
     [SerializeField] private float iFrames; // In seconds
+    [SerializeField] private float pushbackForce;
 
     // Combat
     [Header("Combat Logic")]
@@ -99,6 +97,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private GameObject slash = null;
     [SerializeField] private float attackRange;
     [SerializeField] private float attackSpeed;
+    private bool isGodModeOn = false;
 
     // Timers
     private float lastPressedJumpTimer; 
@@ -154,8 +153,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private void Start()
     {
         gravityDirection = GravityDirection.DOWN;
-        if (gravityDirection != GravityDirection.DOWN)
-            gravityDirectionQueue.Add(gravityDirection);
         
         isGrounded = IsGrounded(Vector2.down);
         gravityMag = Physics.gravity.y;
@@ -164,15 +161,15 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         OnHealthChange(currentHP);
         pinappleCount = 0;
         OnPickUp(pinappleCount);
+        isGodModeOn = false;
     }
 
     private void Update()
     {
         UpdateTimers();
-        CheckInputs();
+        HandleInput();
         CheckCollisions();
         CheckJumpState();
-        // CheckSlide();
         UpdateGravity();
 
         UpdateAnimation();
@@ -181,10 +178,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private void FixedUpdate()
     {
         Run();
-
-        // Handle Slide
-        //if (isSliding)
-        //    Slide();
     }
 
     private void UpdateTimers()
@@ -199,111 +192,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         attackTimer -= Time.deltaTime;
     }
 
-    private void CheckInputs()
-    {
-        //if (gravityDirectionQueue.Count == 0)
-        //{
-        //    gravityDirection = GravityDirection.DOWN;
-        //    Rotate();
-        //}
-        //else if (gravityDirection != gravityDirectionQueue[0])
-        //{
-        //    gravityDirection = gravityDirectionQueue[0];
-        //    Rotate();
-        //}
-
-
-
-        deltaX = 0.0f;
-        if (Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D))        // Left
-        {
-            deltaX = -1.0f;
-        }
-        else if (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A))   // Right
-        {
-            deltaX = 1.0f;
-        }
-
-        // int deltaY = 0;
-        //if (Input.GetKey(KeyCode.S) && !Input.GetKey(KeyCode.W))        // Down
-        //{
-        //    deltaY = -1;
-        //}
-        //else if (Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))   // Up
-        //{
-        //    deltaY = 1;
-        //}
-
-        if (Math.Abs(deltaX) > 0.0f)
-            CheckDirectionToFace(deltaX > 0.0f);
-
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            lastPressedJumpTimer = jumpInputBufferTime;
-        }
-
-        if (Input.GetKeyUp(KeyCode.Space))
-        {
-            switch (gravityDirection)
-            {
-                case GravityDirection.DOWN:
-                    {
-                        if (isJumping && rigidbody.velocity.y > 0.01f)
-                        {
-                            isJumpCut = true;
-                        }
-
-                        break;
-                    }
-                case GravityDirection.RIGHT:
-                    {
-                        if (isJumping && rigidbody.velocity.x < -0.01f)
-                        {
-                            isJumpCut = true;
-                        }
-
-                        break;
-                    }
-                case GravityDirection.UP:
-                    {
-                        if (isJumping && rigidbody.velocity.y < -0.01f)
-                        {
-                            isJumpCut = true;
-                        }
-
-                        break;
-                    }
-                case GravityDirection.LEFT:
-                    {
-                        if (isJumping && rigidbody.velocity.x > 0.01f)
-                        {
-                            isJumpCut = true;
-                        }
-
-                        break;
-                    }
-            }
-        }
-
-        if (Input.GetKeyDown(KeyCode.N))
-        {
-            if (slash == null)
-            {
-                if (isFacingRight)
-                    slash = Instantiate(slashPrefab, new Vector3(transform.position.x + 1.5f, transform.position.y, transform.position.z), transform.rotation);
-                else
-                {
-                    slash = Instantiate(slashPrefab, new Vector3(transform.position.x - 1.5f, transform.position.y, transform.position.z), transform.rotation);
-                    slash.transform.localScale = new Vector3(slash.transform.localScale.x * -1.0f, slash.transform.localScale.y, slash.transform.localScale.z);
-                }
-            }
-        }
-
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            Application.Quit();
-        }
-    }
+    
 
     private void CheckCollisions()
     {
@@ -536,91 +425,148 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     }
 
 
-    private void UpdateAnimation()
+    private void HandleInput()
     {
-        
-        if (MathF.Abs(deltaX) > 0.0f)
+        HandleHorizontalInput();
+        HandleJumpInput();
+        HandleAttackInput();
+        HandleOtherInputs();
+    }
+
+    private void HandleHorizontalInput()
+    {
+        deltaX = 0.0f;
+
+        if (Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D))    // Left
         {
-            movementState = MovementState.RUNNING;
+            deltaX = -1.0f;
         }
-        else
+        else if (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A))    // Right
         {
-            movementState = MovementState.IDLE;
+            deltaX = 1.0f;
         }
 
+        if (Math.Abs(deltaX) > 0.0f)
+        {
+            if (gravityDirection != GravityDirection.UP)
+            {
+                CheckDirectionToFace(deltaX > 0.0f);
+            }
+            else
+            {
+                CheckDirectionToFace(deltaX * (-1.0f) > 0.0f);
+            }
+        }
+    }
+
+    private void HandleJumpInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            lastPressedJumpTimer = jumpInputBufferTime;
+        }
+
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            if (isJumping)
+            {
+                switch (gravityDirection)
+                {
+                    case GravityDirection.DOWN:
+                        isJumpCut = rigidbody.velocity.y > 0.01f;
+                        break;
+                    case GravityDirection.RIGHT:
+                        isJumpCut = rigidbody.velocity.x < -0.01f;
+                        break;
+                    case GravityDirection.UP:
+                        isJumpCut = rigidbody.velocity.y < -0.01f;
+                        break;
+                    case GravityDirection.LEFT:
+                        isJumpCut = rigidbody.velocity.x > 0.01f;
+                        break;
+                }
+            }
+        }
+    }
+
+    private void HandleAttackInput()
+    {
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            if (slash == null)
+            {
+                switch (gravityDirection)
+                {
+                    case GravityDirection.DOWN:
+                        slash = Instantiate(slashPrefab, transform.position + new Vector3(attackRange * transform.localScale.x, 0, 0), transform.rotation);
+                        break;
+                    case GravityDirection.RIGHT:
+                        slash = Instantiate(slashPrefab, transform.position + new Vector3(0, attackRange * transform.localScale.x, 0), transform.rotation);
+                        break;
+                    case GravityDirection.UP:
+                        slash = Instantiate(slashPrefab, transform.position - new Vector3(attackRange * transform.localScale.x, 0, 0), transform.rotation);
+                        break;
+                    case GravityDirection.LEFT:
+                        slash = Instantiate(slashPrefab, transform.position - new Vector3(0, attackRange * transform.localScale.x, 0), transform.rotation);
+                        break;
+                }
+
+                slash.transform.localScale = transform.localScale;
+            }
+        }
+    }
+
+    private void HandleOtherInputs()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            SetGodMode(!isGodModeOn);
+        }
+    }
+
+
+
+    private void UpdateAnimation()
+    {
+        // Set movement state based on deltaX
+        movementState = (MathF.Abs(deltaX) > 0.0f) ? MovementState.RUNNING : MovementState.IDLE;
+
+        // Check if object is jumping or falling (common logic for all gravity directions)
+        if (isFalling)
+            movementState = MovementState.FALLING;
+
+        // Apply specific checks based on gravity direction
         switch (gravityDirection)
         {
             case GravityDirection.DOWN:
-                {
-                    if (rigidbody.velocity.y > 0.01f)
-                    {
-                        movementState = MovementState.JUMPING;
-                    }
-                    else if (isFalling)
-                    {
-                        movementState = MovementState.FALLING;
-                    }
-                    break;
-                }
+                if (rigidbody.velocity.y > 0.01f)
+                    movementState = MovementState.JUMPING;
+                break;
             case GravityDirection.RIGHT:
-                {
-                    if (rigidbody.velocity.x < -0.01f)
-                    {
-                        movementState = MovementState.JUMPING;
-                    }
-                    else if (isFalling)
-                    {
-                        movementState = MovementState.FALLING;
-                    }
-                    break;
-                }
+                if (rigidbody.velocity.x < -0.01f)
+                    movementState = MovementState.JUMPING;
+                break;
             case GravityDirection.UP:
-                {
-                    if (rigidbody.velocity.y < -0.01f)
-                    {
-                        movementState = MovementState.JUMPING;
-                    }
-                    else if (isFalling)
-                    {
-                        movementState = MovementState.FALLING;
-                    }
-                    break;
-                }
+                if (rigidbody.velocity.y < -0.01f)
+                    movementState = MovementState.JUMPING;
+                break;
             case GravityDirection.LEFT:
-                {
-                    if (rigidbody.velocity.x > 0.01f)
-                    {
-                        movementState = MovementState.JUMPING;
-                    }
-                    else if (isFalling)
-                    {
-                        movementState = MovementState.FALLING;
-                    }
-                    break;
-                }
+                if (rigidbody.velocity.x > 0.01f)
+                    movementState = MovementState.JUMPING;
+                break;
         }
-        
+
         animator.SetInteger("movementState", (int)movementState);
     }
+
 
     private bool IsGrounded(Vector2 side)
     {
         return Physics2D.BoxCast(collider.bounds.center, collider.bounds.size, 0.0f, side, 0.1f, groundLayer);
-    }
-
-    void OnRestart()
-    {
-        //transform.position = spawnPoint.position;
-        //rigidbody.velocity = new Vector2(0.0f,0.0f);
-
-        //isDoubleJumpUp = false;
-
-        //maxHP = 3;
-        //currentHP = maxHP;
-        
-        //OnPlayerDamaged(currentHP);
-        //pinappleCount = 0;
-        //OnPickUp(Collectables.PINAPPLE, pinappleCount);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -639,31 +585,15 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         }
         else if (collision.gameObject.CompareTag("Trap") || collision.gameObject.CompareTag("Enemy"))
         {
-            HandleHit();
+            HandleHit(collision.transform.position);
         }
-
-        //else if (collision.gameObject.CompareTag("GravityLeft"))
-        //{
-        //    if (!gravityDirectionQueue.Contains(GravityDirection.LEFT))
-        //        gravityDirectionQueue.Add(GravityDirection.LEFT);
-        //}
-        //else if (collision.gameObject.CompareTag("GravityRight"))
-        //{
-        //    if (!gravityDirectionQueue.Contains(GravityDirection.RIGHT))
-        //        gravityDirectionQueue.Add(GravityDirection.RIGHT);
-        //}
-        //else if (collision.gameObject.CompareTag("GravityUp"))
-        //{
-        //    if (!gravityDirectionQueue.Contains(GravityDirection.UP))
-        //        gravityDirectionQueue.Add(GravityDirection.UP);
-        //}
     }
 
     private void OnTriggerStay2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Trap") || collision.gameObject.CompareTag("Enemy"))
         {
-            HandleHit();
+            HandleHit(collision.transform.position);
         }
 
         if (gravityDirection == GravityDirection.DOWN)
@@ -698,45 +628,14 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
             gravityDirection = GravityDirection.DOWN;
             Rotate();
             Debug.Log("Out");
-        }
-     
-        //else if (collision.gameObject.CompareTag("GravityLeft"))
-        //{
-        //    if (gravityDirectionQueue[0] == GravityDirection.LEFT)
-        //    {
-        //        gravityDirectionQueue.Remove(GravityDirection.LEFT);
-        //        Rotate();
-        //    }
-        //    else
-        //        gravityDirectionQueue.Remove(GravityDirection.LEFT);
-        //}
-        //else if (collision.gameObject.CompareTag("GravityRight"))
-        //{
-        //    if (gravityDirectionQueue[0] == GravityDirection.RIGHT)
-        //    {
-        //        gravityDirectionQueue.Remove(GravityDirection.RIGHT);
-        //        Rotate();
-        //    }
-        //    else
-        //        gravityDirectionQueue.Remove(GravityDirection.RIGHT);
-        //}
-        //else if (collision.gameObject.CompareTag("GravityUp"))
-        //{
-        //    if (gravityDirectionQueue[0] == GravityDirection.UP)
-        //    {
-        //        gravityDirectionQueue.Remove(GravityDirection.UP);
-        //        Rotate();
-        //    }
-        //    else
-        //        gravityDirectionQueue.Remove(GravityDirection.UP);
-        //}
+        }      
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Trap") || collision.gameObject.CompareTag("Enemy"))
+        if (collision.gameObject.CompareTag("Trap"))
         {
-            HandleHit();
+            HandleHit(collision.transform.position);
         }
     }
 
@@ -744,70 +643,44 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     {
         if (collision.gameObject.CompareTag("Trap") || collision.gameObject.CompareTag("Enemy"))
         {
-            HandleHit();
+            HandleHit(collision.transform.position);
         }
     }
 
     private void Jump()
     {
+        lastPressedJumpTimer = 0.0f;
+        lastOnGroundTimer = 0.0f;
+
         switch (gravityDirection)
         {
             case GravityDirection.DOWN:
                 {
-                    // Reset timers
-                    lastPressedJumpTimer = 0.0f;
-                    lastOnGroundTimer = 0.0f;
-
-                    // Calculate resulting force (it has to be stronger if the player's falling to counter the fall's strength) 
-                    float force = jumpForce;
-                    if (rigidbody.velocity.y < -0.01f)
-                        force -= rigidbody.velocity.y;
-
+                    float force = jumpForce - Mathf.Abs(rigidbody.velocity.y);
                     rigidbody.AddForce(Vector2.up * force, ForceMode2D.Impulse);
-
                     break;
                 }
             case GravityDirection.RIGHT:
                 {
-                    lastPressedJumpTimer = 0.0f;
-                    lastOnGroundTimer = 0.0f;
-
-                    float force = jumpForce;
-                    if (rigidbody.velocity.x > 0.01f)
-                        force += rigidbody.velocity.x;
-
+                    float force = jumpForce + Mathf.Abs(rigidbody.velocity.x);
                     rigidbody.AddForce(Vector2.left * force, ForceMode2D.Impulse);
-
                     break;
                 }
             case GravityDirection.UP:
                 {
-                    lastPressedJumpTimer = 0.0f;
-                    lastOnGroundTimer = 0.0f;
-
-                    float force = jumpForce;
-                    if (rigidbody.velocity.y > 0.01f)
-                        force -= rigidbody.velocity.y;
-
+                    float force = jumpForce - Mathf.Abs(rigidbody.velocity.y);
                     rigidbody.AddForce(Vector2.down * force, ForceMode2D.Impulse);
-
                     break;
                 }
             case GravityDirection.LEFT:
                 {
-                    lastPressedJumpTimer = 0.0f;
-                    lastOnGroundTimer = 0.0f;
-
-                    float force = jumpForce;
-                    if (rigidbody.velocity.x < -0.01f)
-                        force -= rigidbody.velocity.x;
-
+                    float force = jumpForce - Mathf.Abs(rigidbody.velocity.x);
                     rigidbody.AddForce(Vector2.right * force, ForceMode2D.Impulse);
-
                     break;
                 }
         }
     }
+
 
     private void Run()
     {
@@ -827,28 +700,15 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         {
             case GravityDirection.DOWN:
                 {
-                    //Increase are acceleration and maxSpeed when at the apex of their jump, makes the jump feel a bit more bouncy, responsive and natural
                     if ((isJumping || isFalling) && Mathf.Abs(rigidbody.velocity.y) < jumpHangTimeThreshold)
                     {
                         accelRate *= jumpHangAccelerationMult;
                         targetSpeed *= jumpHangMaxSpeedMult;
                     }
 
-                    //We won't slow the player down if they are moving in their desired direction but at a greater speed than their maxSpeed
-                    //if (doConserveMomentum && Mathf.Abs(RB.velocity.x) > Mathf.Abs(targetSpeed) && Mathf.Sign(RB.velocity.x) == Mathf.Sign(targetSpeed) && Mathf.Abs(targetSpeed) > 0.01f && LastOnGroundTime < 0)
-                    //{
-                    //    //Prevent any deceleration from happening, or in other words conserve are current momentum
-                    //    //You could experiment with allowing for the player to slightly increae their speed whilst in this "state"
-                    //    accelRate = 0;
-                    //}
-
-
                     float speedDif = targetSpeed - rigidbody.velocity.x;
-                    //Calculate force along x-axis to apply to thr player
-
                     float movement = speedDif * accelRate;
 
-                    //Convert this to a vector and apply to rigidbody
                     if (Math.Abs(speedDif) > 1.0f)
                         rigidbody.AddForce(movement * Vector2.right, ForceMode2D.Force);
 
@@ -863,7 +723,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
                     }
 
                     float speedDif = targetSpeed - rigidbody.velocity.y;
-
                     float movement = speedDif * accelRate;
 
                     if (Math.Abs(speedDif) > 1.0f)
@@ -879,12 +738,11 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
                         targetSpeed *= jumpHangMaxSpeedMult;
                     }
 
-                    float speedDif = targetSpeed - rigidbody.velocity.x * (-1.0f);
-
+                    float speedDif = targetSpeed - rigidbody.velocity.x;
                     float movement = speedDif * accelRate;
 
                     if (Math.Abs(speedDif) > 1.0f)
-                        rigidbody.AddForce(movement * Vector2.left, ForceMode2D.Force);
+                        rigidbody.AddForce(movement * Vector2.right, ForceMode2D.Force); 
 
                     break;
                 }
@@ -897,7 +755,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
                     }
 
                     float speedDif = targetSpeed - rigidbody.velocity.y * (-1.0f);
-
                     float movement = speedDif * accelRate;
 
                     if (Math.Abs(speedDif) > 1.0f)
@@ -970,21 +827,11 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         }
     }
 
-    private void OnEnable()
+    private void HandleHit(Vector3 origin)
     {
-        GameManager.OnRestart += OnRestart;
-    }
-
-    private void OnDisable()
-    {
-        GameManager.OnRestart -= OnRestart;
-    }
-
-    private void HandleHit()
-    {
-        if (iFramesTimer > 0.0f) // Virtually no hit
+        if (iFramesTimer > 0.0f || isGodModeOn) // Virtually no hit
             return;
-
+        
         currentHP--;
         OnHealthChange(currentHP);
 
@@ -997,7 +844,9 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
             animator.SetTrigger("Hit");
             canMove = false;
             iFramesTimer = iFrames;
-            rigidbody.AddForce(new Vector2(transform.localScale.x * -15.0f, 0.0f), ForceMode2D.Impulse);
+
+            Vector3 pushbackDirection = Vector3.Normalize(transform.position - origin);
+            rigidbody.AddForce(pushbackDirection * pushbackForce, ForceMode2D.Impulse);
         }
     }
 
@@ -1017,4 +866,382 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     {
         SceneManager.LoadScene("Map02");
     }
+
+    private void SetGodMode(bool setTo)
+    {
+        if (isGodModeOn != setTo)
+            isGodModeOn = setTo;
+    }
 }
+
+
+
+/*
+ 
+private void UpdateGravity()
+    {
+        // Reset to default material
+        if (rigidbody.sharedMaterial != defaultMaterial)
+            rigidbody.sharedMaterial = defaultMaterial;
+
+        switch (gravityDirection)
+        {
+            case GravityDirection.DOWN:
+                {
+                    // Higher gravity if jump button released
+                    if (isJumpCut)
+                        rigidbody.gravityScale = gravityScale * jumpCutGravityMult;
+
+                    // Lower gravity when on the pinacle of the jump
+                    else if ((isJumping || isFalling) && Mathf.Abs(rigidbody.velocity.y) < jumpHangTimeThreshold)
+                    {
+                        rigidbody.gravityScale = gravityScale * jumpHangGravityMult;
+                        rigidbody.sharedMaterial = slipMaterial;
+                    }
+
+                    // Higher gravity when falling
+                    else if (rigidbody.velocity.y < -0.01f)
+                    {
+                        rigidbody.gravityScale = gravityScale * fallGravityMult;
+                        rigidbody.velocity = new Vector2(rigidbody.velocity.x, Mathf.Max(rigidbody.velocity.y, -maxFallSpeed));
+                    }
+
+                    // Default gravity if standing on a platform or moving upwards
+                    else
+                        rigidbody.gravityScale = gravityScale;
+
+                    break;
+                }
+            case GravityDirection.RIGHT:
+                {
+                    if (isJumpCut)
+                        rigidbody.gravityScale = gravityScale * jumpCutGravityMult;
+
+                    else if ((isJumping || isFalling) && Mathf.Abs(rigidbody.velocity.x) < jumpHangTimeThreshold)
+                    {
+                        rigidbody.gravityScale = gravityScale * jumpHangGravityMult;
+                        rigidbody.sharedMaterial = slipMaterial;
+                    }
+
+                    else if (rigidbody.velocity.x > 0.01f)
+                    {
+                        rigidbody.gravityScale = gravityScale * fallGravityMult;
+                        rigidbody.velocity = new Vector2(Mathf.Max(rigidbody.velocity.x, -maxFallSpeed), rigidbody.velocity.y);
+                    }
+                    else
+                        rigidbody.gravityScale = gravityScale;
+
+                    break;
+                }
+            case GravityDirection.UP:
+                {
+                    if (isJumpCut)
+                        rigidbody.gravityScale = gravityScale * jumpCutGravityMult;
+
+                    else if ((isJumping || isFalling) && Mathf.Abs(rigidbody.velocity.y) < jumpHangTimeThreshold)
+                    {
+                        rigidbody.gravityScale = gravityScale * jumpHangGravityMult;
+                        rigidbody.sharedMaterial = slipMaterial;
+                    }
+
+                    else if (rigidbody.velocity.y > 0.01f)
+                    {
+                        rigidbody.gravityScale = gravityScale * fallGravityMult;
+                        rigidbody.velocity = new Vector2(rigidbody.velocity.x, Mathf.Max(rigidbody.velocity.y, -maxFallSpeed));
+                    }
+
+                    else
+                        rigidbody.gravityScale = gravityScale;
+
+                    break;
+                }
+            case GravityDirection.LEFT:
+                {
+                    if (isJumpCut)
+                        rigidbody.gravityScale = gravityScale * jumpCutGravityMult;
+
+                    else if ((isJumping || isFalling) && Mathf.Abs(rigidbody.velocity.x) < jumpHangTimeThreshold)
+                    {
+                        rigidbody.gravityScale = gravityScale * jumpHangGravityMult;
+                        rigidbody.sharedMaterial = slipMaterial;
+                    }
+
+                    else if (rigidbody.velocity.x < -0.01f)
+                    {
+                        rigidbody.gravityScale = gravityScale * fallGravityMult;
+                        rigidbody.velocity = new Vector2(Mathf.Max(rigidbody.velocity.x, -maxFallSpeed), rigidbody.velocity.y);
+                    }
+                    else
+                        rigidbody.gravityScale = gravityScale;
+
+                    break;
+                }
+        }
+    }
+
+*/
+
+/*
+ 
+private void UpdateAnimation()
+    {
+        // Set movement state based on deltaX
+        movementState = (MathF.Abs(deltaX) > 0.0f) ? MovementState.RUNNING : MovementState.IDLE;
+
+
+        switch (gravityDirection)
+        {
+            case GravityDirection.DOWN:
+                {
+                    if (rigidbody.velocity.y > 0.01f)
+                    {
+                        movementState = MovementState.JUMPING;
+                    }
+                    else if (isFalling)
+                    {
+                        movementState = MovementState.FALLING;
+                    }
+                    break;
+                }
+            case GravityDirection.RIGHT:
+                {
+                    if (rigidbody.velocity.x < -0.01f)
+                    {
+                        movementState = MovementState.JUMPING;
+                    }
+                    else if (isFalling)
+                    {
+                        movementState = MovementState.FALLING;
+                    }
+                    break;
+                }
+            case GravityDirection.UP:
+                {
+                    if (rigidbody.velocity.y < -0.01f)
+                    {
+                        movementState = MovementState.JUMPING;
+                    }
+                    else if (isFalling)
+                    {
+                        movementState = MovementState.FALLING;
+                    }
+                    break;
+                }
+            case GravityDirection.LEFT:
+                {
+                    if (rigidbody.velocity.x > 0.01f)
+                    {
+                        movementState = MovementState.JUMPING;
+                    }
+                    else if (isFalling)
+                    {
+                        movementState = MovementState.FALLING;
+                    }
+                    break;
+                }
+        }
+        
+        animator.SetInteger("movementState", (int)movementState);
+    }
+
+*/
+
+
+/*
+ 
+
+private void CheckInputs()
+    {
+        deltaX = 0.0f;
+        if (Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D))        // Left
+        {
+            deltaX = -1.0f;
+        }
+        else if (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A))   // Right
+        {
+            deltaX = 1.0f;
+        }
+
+        // This might be used for climbing ladders
+        // int deltaY = 0;
+        //if (Input.GetKey(KeyCode.S) && !Input.GetKey(KeyCode.W))        // Down
+        //{
+        //    deltaY = -1;
+        //}
+        //else if (Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))   // Up
+        //{
+        //    deltaY = 1;
+        //}
+
+        if (Math.Abs(deltaX) > 0.0f)
+        {
+            if (gravityDirection != GravityDirection.UP)
+                CheckDirectionToFace(deltaX > 0.0f);
+            else
+                CheckDirectionToFace(deltaX * (-1.0f) > 0.0f);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            lastPressedJumpTimer = jumpInputBufferTime;
+        }
+
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            switch (gravityDirection)
+            {
+                case GravityDirection.DOWN:
+                    {
+                        if (isJumping && rigidbody.velocity.y > 0.01f)
+                        {
+                            isJumpCut = true;
+                        }
+
+                        break;
+                    }
+                case GravityDirection.RIGHT:
+                    {
+                        if (isJumping && rigidbody.velocity.x < -0.01f)
+                        {
+                            isJumpCut = true;
+                        }
+
+                        break;
+                    }
+                case GravityDirection.UP:
+                    {
+                        if (isJumping && rigidbody.velocity.y < -0.01f)
+                        {
+                            isJumpCut = true;
+                        }
+
+                        break;
+                    }
+                case GravityDirection.LEFT:
+                    {
+                        if (isJumping && rigidbody.velocity.x > 0.01f)
+                        {
+                            isJumpCut = true;
+                        }
+
+                        break;
+                    }
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            if (slash == null)
+            {
+
+                switch (gravityDirection)
+                {
+                    case GravityDirection.DOWN:
+                        {
+                            slash = Instantiate(slashPrefab, new Vector3(transform.position.x + attackRange * transform.localScale.x, transform.position.y, transform.position.z), transform.rotation);
+
+                            break;
+                        }
+                    case GravityDirection.RIGHT:
+                        {
+                            slash = Instantiate(slashPrefab, new Vector3(transform.position.x, transform.position.y + attackRange * transform.localScale.x, transform.position.z), transform.rotation);
+
+                            break;
+                        }
+                    case GravityDirection.UP:
+                        {
+                            slash = Instantiate(slashPrefab, new Vector3(transform.position.x - attackRange * transform.localScale.x, transform.position.y, transform.position.z), transform.rotation);
+
+                            break;
+                        }
+                    case GravityDirection.LEFT:
+                        {
+                            slash = Instantiate(slashPrefab, new Vector3(transform.position.x, transform.position.y - attackRange * transform.localScale.x, transform.position.z), transform.rotation);
+
+                            break;
+                        }
+                }
+
+                slash.transform.localScale = transform.localScale;
+
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
+    }
+
+
+*/
+
+
+/*
+ 
+
+    private void Jump()
+    {
+        switch (gravityDirection)
+        {
+            case GravityDirection.DOWN:
+                {
+                    // Reset timers
+                    lastPressedJumpTimer = 0.0f;
+                    lastOnGroundTimer = 0.0f;
+
+                    // Calculate resulting force (it has to be stronger if the player's falling to counter the fall's strength) 
+                    float force = jumpForce;
+                    if (rigidbody.velocity.y < -0.01f)
+                        force -= rigidbody.velocity.y;
+
+                    rigidbody.AddForce(Vector2.up * force, ForceMode2D.Impulse);
+
+                    break;
+                }
+            case GravityDirection.RIGHT:
+                {
+                    lastPressedJumpTimer = 0.0f;
+                    lastOnGroundTimer = 0.0f;
+
+                    float force = jumpForce;
+                    if (rigidbody.velocity.x > 0.01f)
+                        force += rigidbody.velocity.x;
+
+                    rigidbody.AddForce(Vector2.left * force, ForceMode2D.Impulse);
+
+                    break;
+                }
+            case GravityDirection.UP:
+                {
+                    lastPressedJumpTimer = 0.0f;
+                    lastOnGroundTimer = 0.0f;
+
+                    float force = jumpForce;
+                    if (rigidbody.velocity.y > 0.01f)
+                        force -= rigidbody.velocity.y;
+
+                    rigidbody.AddForce(Vector2.down * force, ForceMode2D.Impulse);
+
+                    break;
+                }
+            case GravityDirection.LEFT:
+                {
+                    lastPressedJumpTimer = 0.0f;
+                    lastOnGroundTimer = 0.0f;
+
+                    float force = jumpForce;
+                    if (rigidbody.velocity.x < -0.01f)
+                        force -= rigidbody.velocity.x;
+
+                    rigidbody.AddForce(Vector2.right * force, ForceMode2D.Impulse);
+
+                    break;
+                }
+        }
+    }
+
+
+*/
+
+

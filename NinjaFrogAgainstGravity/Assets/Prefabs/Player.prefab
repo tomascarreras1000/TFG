@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 8451149384030645533}
   - component: {fileID: 8451149384030645522}
   - component: {fileID: 8451149384030645532}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -153,6 +153,7 @@ MonoBehaviour:
     m_Bits: 64
   defaultMaterial: {fileID: 6200000, guid: dd25601da7b533a49af08fa03c61fbb9, type: 2}
   slipMaterial: {fileID: 6200000, guid: c5136dce8ca96d44794f8270698cf595, type: 2}
+  maxHP: 3
   maxFallSpeed: 30
   runMaxSpeed: 20
   runAccelAmount: 5
@@ -169,6 +170,11 @@ MonoBehaviour:
   jumpHangTimeThreshold: 1.25
   jumpHangGravityMult: 0.5
   fallGravityMult: 1.75
+  iFrames: 2
+  pushbackForce: 15
+  slashPrefab: {fileID: 2246667537956222469, guid: 4fc4d0f89ade304438048856b64106d3, type: 3}
+  attackRange: 1.5
+  attackSpeed: 0
   gravityFieldTime: 0.1
 --- !u!114 &8451149384030645522
 MonoBehaviour:

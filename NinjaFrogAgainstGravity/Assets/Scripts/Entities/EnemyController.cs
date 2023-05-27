@@ -29,7 +29,8 @@ public class EnemyController : MonoBehaviour
     private Transform target = null;
     private float attackTimer = 0.0f;
     private bool isAttacking = false;
-    private GameObject slashEffect;
+    private GameObject slashEffect = null;
+    private GameObject exclamation = null;
 
     private enum EnemyBehaviours
     {
@@ -61,7 +62,7 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float attackRange;
     [SerializeField] private float attackSpeed;
     [SerializeField] private LayerMask detectionLayers;
-    [SerializeField] private GameObject exclamation;
+    [SerializeField] private GameObject exclamationPrefab;
     [SerializeField] private GameObject slashPrefab;
 
 
@@ -87,88 +88,20 @@ public class EnemyController : MonoBehaviour
         if (!isAlive)
             return;
 
-        CheckTimers();
-        CheckLedge();
+        UpdateLocalTimers();
+        CheckForLedge();
         CheckCollision();
         CheckForPlayer();
-        UpdateAnimation();
+        UpdateCurrentAnimation();
 
         if (isAttacking)
             return;
 
         if (target)
-        {
-            if (exclamation)
-            {
-                if (!exclamation.activeInHierarchy)
-                {
-                    exclamation.SetActive(true);
-                }
-            }
-            if (Mathf.Abs(target.position.x - transform.position.x) <= attackRange)
-            {
-                // Attack
-                 Attack();
-            }
-            else
-            {
-                if (isFacingLeft)
-                    transform.position += Vector3.left * speed /* Maybe a different speed (?) */ * Time.deltaTime;
-                else
-                    transform.position += Vector3.right * speed /* Maybe a different speed (?) */ * Time.deltaTime;
-            }
-
-            return;
-        }
-        else if (exclamation)
-        {
-            if (exclamation.activeInHierarchy)
-            {
-                exclamation.SetActive(false);
-            }
-        }
-
-
-        switch (currentBehaviour)
-        {
-            case EnemyBehaviours.IDLE:
-                {
-                    return;
-                }
-            case EnemyBehaviours.PATROL:
-                {
-                    if (!isOnLedge) // TODO: get a way to unstuck (maybe a timer to repath (?) )
-                        transform.position += Vector3.Normalize(currentPatrolPoint.transform.position - transform.position) * speed * Time.deltaTime;
-
-                    if (Vector2.Distance(transform.position, currentPatrolPoint.transform.position) < 0.05f)
-                    {
-                        UpdateCurrentPatrolPoint();
-                        CheckDirectionToFace((currentPatrolPoint.transform.position.x - transform.position.x) < -0.0f);
-                    }
-                    break;
-                }
-            case EnemyBehaviours.WANDER:
-                {
-                    if (!isOnLedge && !isOnWall)
-                    {
-                        if (isFacingLeft)
-                            transform.position += Vector3.left * speed * Time.deltaTime;
-                        else
-                            transform.position += Vector3.right * speed * Time.deltaTime;
-                    }
-                    else
-                    {
-                        Turn();
-                        isOnLedge = false;
-                        isOnWall = false;
-                    }
-                    
-                    break;
-                }
-        }
-        
+            HandleAttack();
+        else
+            HandleCurrentBehaviour();
     }
-
 
     private void CheckDirectionToFace(bool isFacingLeft)
     {
@@ -176,22 +109,18 @@ public class EnemyController : MonoBehaviour
             Turn();
     }
 
-    private void CheckTimers()
+    private void UpdateLocalTimers()
     {
         turnTimer -= Time.deltaTime;
         attackTimer -= Time.deltaTime;
         if (attackTimer <= 0.0f)
             SetIsAttacking(false);
     }
-    private void CheckLedge()
+    private void CheckForLedge()
     {
-        Vector3 rOrigin;
-        if (isFacingLeft)
-            rOrigin = transform.position + ledgeCheckOffset.x * Vector3.left;
-        else
-            rOrigin = transform.position + ledgeCheckOffset.x * Vector3.right;
+        Vector3 rOrigin = transform.position + ledgeCheckOffset.x * transform.right * transform.localScale.x * (-1.0f);
 
-        if (!Physics2D.Raycast(rOrigin, Vector2.down, ledgeCheckOffset.y, groundLayer))
+        if (!Physics2D.Raycast(rOrigin, transform.up * (-1.0f), ledgeCheckOffset.y, groundLayer))
         {
             // No floor ahead
             isOnLedge = true;
@@ -200,31 +129,88 @@ public class EnemyController : MonoBehaviour
 
     private void CheckCollision()
     {
-        if (isFacingLeft)
-            isOnWall = IsCollidingWithSide(Vector2.left);
-        else
-            isOnWall = IsCollidingWithSide(Vector2.right);
+        isOnWall = IsCollidingWithSide(transform.right * transform.localScale.x * (-1.0f));
     }
 
     private void CheckForPlayer()
     {
         // Look for target
-        RaycastHit2D hit;
-        if (isFacingLeft)
-            hit = Physics2D.Raycast(transform.position, Vector2.left, aggroRange, detectionLayers);
-        else
-            hit = Physics2D.Raycast(transform.position, Vector2.right, aggroRange, detectionLayers);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.right * transform.localScale.x * (-1.0f), aggroRange, detectionLayers);
 
         if (hit && hit.collider.CompareTag("Player"))
             target = hit.transform;
-        
         else
             target = null;
     }
 
-    private void UpdateAnimation()
+    private void UpdateCurrentAnimation()
     {
         animator.SetInteger("currentBehaviour", (int)currentBehaviour);
+    }
+
+    private void HandleAttack()
+    {
+        CreateExclamation();
+
+        if (Vector3.Distance(transform.position, target.position) <= attackRange)
+            Attack();
+        else
+            transform.position += transform.right * transform.localScale.x * (-1.0f) * speed * Time.deltaTime;
+    }
+
+    private void CreateExclamation()
+    {
+        if (exclamation)
+            return;
+
+        Vector3 offset = new Vector3(-1.0f, 1.0f, 0.0f);
+        exclamation = Instantiate(exclamationPrefab, transform.position, transform.rotation, transform);
+        exclamation.transform.localScale = transform.localScale;
+        exclamation.transform.Translate(offset);
+    }
+
+    private void HandleCurrentBehaviour()
+    {
+        if (exclamation)
+            Destroy(exclamation);
+
+        switch (currentBehaviour)
+        {
+            case EnemyBehaviours.IDLE:
+                return;
+            case EnemyBehaviours.PATROL:
+                Patrol();
+                break;
+            case EnemyBehaviours.WANDER:
+                Wander();
+                break;
+        }
+    }
+
+    private void Patrol()
+    {
+        if (!isOnLedge) // TODO: get a way to unstuck (maybe a timer to repath (?) )
+            transform.position += Vector3.Normalize(currentPatrolPoint.transform.position - transform.position) * speed * Time.deltaTime;
+
+        if (Vector2.Distance(transform.position, currentPatrolPoint.transform.position) < 0.05f)
+        {
+            UpdateCurrentPatrolPoint();
+            CheckDirectionToFace((currentPatrolPoint.transform.position.x - transform.position.x) < -0.0f);
+        }
+    }
+
+    private void Wander()
+    {
+        if (!isOnLedge && !isOnWall)
+        {
+            transform.position += transform.right * transform.localScale.x * (-1.0f) * speed * Time.deltaTime;
+        }
+        else
+        {
+            Turn();
+            isOnLedge = false;
+            isOnWall = false;
+        }
     }
     private void UpdateCurrentPatrolPoint()
     {
@@ -256,18 +242,6 @@ public class EnemyController : MonoBehaviour
             }
             currentPatrolPoint = patrolPoints[patrolIndex];
         }
-
-        //if (currentPatrolPoint.transform.position.x > transform.position.x)
-        //{
-        //    if (hasAnimator)
-        //        animator.SetBool("isGoingLeft", false);
-        //}
-        //
-        //else
-        //{
-        //    if (hasAnimator)
-        //        animator.SetBool("isGoingLeft", true);
-        //}
     }
 
     private void Attack()
@@ -288,7 +262,7 @@ public class EnemyController : MonoBehaviour
             else
             {
                 slashEffect = Instantiate(slashPrefab, transform.position, transform.rotation, transform.parent);
-                slashEffect.transform.localScale = new Vector3(slashEffect.transform.localScale.x * -1.0f, slashEffect.transform.localScale.y, slashEffect.transform.localScale.z);
+                slashEffect.transform.localScale = transform.localScale;
             }
         }
     }
@@ -315,7 +289,7 @@ public class EnemyController : MonoBehaviour
 
     private bool IsCollidingWithSide(Vector2 side)
     {
-        return Physics2D.BoxCast(collider.bounds.center, collider.bounds.size, 0.0f, side, 0.1f, groundLayer);
+        return Physics2D.BoxCast(collider.bounds.center, collider.bounds.size, 0.0f, side, 0.5f, groundLayer);
     }
 
     private void SetIsAttacking(bool setTo)
