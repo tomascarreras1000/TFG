@@ -12,6 +12,7 @@ TagManager:
   - GravityLeft
   - Enemy
   - PlayerAttack
+  - Limit
   layers:
   - Default
   - TransparentFX

@@ -12,6 +12,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private Collider2D collider;
     private Animator animator;
     private SpriteRenderer sprite;
+    private AudioSource audioSource;
 
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private PhysicsMaterial2D defaultMaterial;
@@ -105,18 +106,13 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private float lastOnWallRightTimer; 
     private float lastOnWallLeftTimer;  
     private float lastOnWallTimer;
-    private float lastOnGravityFieldTimer;
     private float iFramesTimer;
     private float attackTimer;
 
+    // Sounds
+    [Header("Sounds")]
+    [SerializeField] private AudioClip audioClipRunning;
 
-
-
-
-
-    // Gravity Logic
-    [Header("Gravity Logic")]
-    [SerializeField] private float gravityFieldTime;
 
     // Physics shit
     private float speed = 3.0f;
@@ -141,10 +137,13 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private void Awake()
     {
         spawnPoint = GameObject.Find("SpawnPoint").transform;
+        
         rigidbody = GetComponent<Rigidbody2D>();
         collider = GetComponent<Collider2D>();
         animator = GetComponent<Animator>();
         sprite = GetComponent<SpriteRenderer>();
+        audioSource = GetComponent<AudioSource>();
+
         GameObject sceneManagerGO = GameObject.Find("SceneManager");
         if (sceneManager)
             sceneManager = sceneManagerGO.GetComponent<GameManager>();
@@ -171,7 +170,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         CheckCollisions();
         CheckJumpState();
         UpdateGravity();
-
+        UpdateAudioSource();
         UpdateAnimation();
     }
 
@@ -187,7 +186,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         lastOnWallRightTimer -= Time.deltaTime;
         lastOnWallLeftTimer -= Time.deltaTime;
         lastPressedJumpTimer -= Time.deltaTime;
-        lastOnGravityFieldTimer -= Time.deltaTime;
         iFramesTimer -= Time.deltaTime;
         attackTimer -= Time.deltaTime;
     }
@@ -529,6 +527,26 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     }
 
 
+    private void UpdateAudioSource()
+    {
+        if (Mathf.Abs(deltaX) > 0f && lastOnGroundTimer > 0.0f && !isJumping)
+        {
+            if (audioSource.clip != audioClipRunning)
+            {
+                audioSource.clip = audioClipRunning;
+                audioSource.Play();
+            }
+            else if (!audioSource.isPlaying)
+            {
+                audioSource.Play();
+                Debug.Log("Here");
+            }
+        }
+        else
+        {
+            audioSource.Pause();
+        }
+    }
 
     private void UpdateAnimation()
     {
@@ -586,6 +604,10 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         else if (collision.gameObject.CompareTag("Trap") || collision.gameObject.CompareTag("Enemy"))
         {
             HandleHit(collision.transform.position);
+        }
+        else if (collision.gameObject.CompareTag("Limit"))
+        {
+            HandleHit(collision.transform.position, true);
         }
     }
 
@@ -827,20 +849,21 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         }
     }
 
-    private void HandleHit(Vector3 origin)
+    private void HandleHit(Vector3 origin, bool isLethalDmg = false)
     {
         if (iFramesTimer > 0.0f || isGodModeOn) // Virtually no hit
             return;
         
         currentHP--;
-        OnHealthChange(currentHP);
-
-        if (currentHP <= 0)
+        if (currentHP <= 0 || isLethalDmg)
         {
+            currentHP = 0;
+            OnHealthChange(currentHP);
             Die();
         }
         else
         {
+            OnHealthChange(currentHP);
             animator.SetTrigger("Hit");
             canMove = false;
             iFramesTimer = iFrames;
