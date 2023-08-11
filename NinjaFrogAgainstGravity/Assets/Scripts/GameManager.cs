@@ -12,12 +12,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject pinapplePrefab;
     [HideInInspector] public List<GameObject> collectables;
 
+    public List<GameObject> bossDoors;
+
     public static event Action OnRestart;
-
-    private void OnEnable()
-    {
-
-    }
 
     public void Start()
     {
@@ -48,6 +45,22 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < collectables.Count; i++)
         {
             Destroy(collectables[i]);
+        }
+    }
+
+    public void OnKeyPickup(int keyId)
+    {
+        if (keyId == 1)
+        {
+            bossDoors[keyId - 1].SetActive(false);
+        }
+        else if (keyId == 2)
+        {
+            bossDoors[keyId - 1].SetActive(false);
+        }
+        else
+        {
+            Debug.Log("Invalid Key Id!");
         }
     }
 }

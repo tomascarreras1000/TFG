@@ -154,7 +154,7 @@ public class EnemyController : MonoBehaviour
 
         if (Vector3.Distance(transform.position, target.position) <= attackRange)
             Attack();
-        else
+        else if (!isOnLedge)
             transform.position += transform.right * transform.localScale.x * (-1.0f) * speed * Time.deltaTime;
     }
 

@@ -20,7 +20,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
 
     private Transform spawnPoint;
 
-    private GameManager sceneManager;
+    private GameManager gameManager;
 
     private enum GravityDirection
     {
@@ -144,9 +144,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         sprite = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
 
-        GameObject sceneManagerGO = GameObject.Find("SceneManager");
-        if (sceneManager)
-            sceneManager = sceneManagerGO.GetComponent<GameManager>();
+        gameManager = FindObjectOfType<GameManager>();
     }
 
     private void Start()
@@ -608,6 +606,12 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         else if (collision.gameObject.CompareTag("Limit"))
         {
             HandleHit(collision.transform.position, true);
+        }
+        else if (collision.gameObject.GetComponent<BossKeyTag>())
+        {
+            int a = collision.gameObject.GetComponent<BossKeyTag>().doorNumber;
+            gameManager.OnKeyPickup(a);
+            Destroy(collision.gameObject);
         }
     }
 
