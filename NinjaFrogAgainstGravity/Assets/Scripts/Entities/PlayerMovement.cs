@@ -537,7 +537,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
             else if (!audioSource.isPlaying)
             {
                 audioSource.Play();
-                Debug.Log("Here");
             }
         }
         else
@@ -853,7 +852,7 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         }
     }
 
-    private void HandleHit(Vector3 origin, bool isLethalDmg = false)
+    public void HandleHit(Vector3 origin, bool isLethalDmg = false)
     {
         if (iFramesTimer > 0.0f || isGodModeOn) // Virtually no hit
             return;

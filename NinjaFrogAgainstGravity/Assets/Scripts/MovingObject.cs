@@ -44,8 +44,27 @@ public class MovingObject : MonoBehaviour
             return;
         }
 
-        transform.position += Vector3.Normalize(currentPatrolPoint.transform.position - transform.position) * speed * Time.deltaTime;
+        bool isGoingDown = false;
+        if (transform.position.y > currentPatrolPoint.transform.position.y) 
+        {
+            isGoingDown = true;
+        }
         
+        transform.position += Vector3.Normalize(currentPatrolPoint.transform.position - transform.position) * speed * Time.deltaTime;
+
+        if (isGoingDown)
+        {
+            if (transform.position.y < currentPatrolPoint.transform.position.y)
+            {
+                transform.position = new Vector3(transform.position.x, currentPatrolPoint.transform.position.y, transform.position.z);
+            }
+        }
+        else if (transform.position.y > currentPatrolPoint.transform.position.y)
+        {
+            transform.position = new Vector3(transform.position.x, currentPatrolPoint.transform.position.y, transform.position.z);
+        }
+
+
         if (Vector2.Distance(transform.position, currentPatrolPoint.transform.position) < 0.05f)
         {
             UpdateCurrentPatrolPoint();
