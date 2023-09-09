@@ -652,7 +652,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         {
             gravityDirection = GravityDirection.DOWN;
             Rotate();
-            Debug.Log("Out");
         }      
     }
 

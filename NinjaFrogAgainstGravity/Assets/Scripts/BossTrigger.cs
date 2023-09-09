@@ -10,7 +10,25 @@ public class BossTrigger : MonoBehaviour
 
             if (GetComponent<BossTriggerTag>().bossToTrigger == 1)
             {
-                bosses[0].GetComponent<GolemManager>().Spawn();
+                for (int i = 0; i < bosses.Length; i++)
+                {
+                    if (bosses[i].TryGetComponent<GolemManager>(out GolemManager golem))
+                    {
+                        golem.Spawn();
+                        Destroy(gameObject);
+                    }
+                }
+            }
+            else if (GetComponent<BossTriggerTag>().bossToTrigger == 2)
+            {
+                for (int i = 0; i < bosses.Length; i++)
+                {
+                    if (bosses[i].TryGetComponent<MinotaurManager>(out MinotaurManager minotaur))
+                    {
+                        minotaur.Spawn();
+                        Destroy(gameObject);
+                    }
+                }
             }
         }
     }
