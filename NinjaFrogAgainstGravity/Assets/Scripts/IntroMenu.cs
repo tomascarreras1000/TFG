@@ -5,7 +5,7 @@ public class IntroMenu : MonoBehaviour
 {
     public void NewGame()
     {
-        SceneManager.LoadScene("Map02");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
     }
     public void Exit()
     {

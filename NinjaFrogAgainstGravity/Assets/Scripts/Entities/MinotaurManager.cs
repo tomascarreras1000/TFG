@@ -6,6 +6,7 @@ public class MinotaurManager : MonoBehaviour
     {
         INACTIVE = 0,
 
+        SPAWN,
         CHARGE,
         SMASH,
         SPIN,
@@ -83,6 +84,10 @@ public class MinotaurManager : MonoBehaviour
         if (currentState == MinotaurState.DEAD)
         {
 
+        }
+        else if (currentState == MinotaurState.SPAWN)
+        {
+            
         }
         else if (stunTimer < currentStunDuration)
         {
@@ -177,9 +182,9 @@ public class MinotaurManager : MonoBehaviour
     {
         Debug.Log("Spawning minotaur");
 
-        currentState = MinotaurState.CHARGE;
-        idleTurnTimer = 0f;
+        currentState = MinotaurState.SPAWN;
         isVulnerable = false;
+        animator.SetTrigger("Spawn");
     }
 
     private bool CheckCollision(out bool hasToStun)
@@ -246,6 +251,13 @@ public class MinotaurManager : MonoBehaviour
         animator.SetTrigger("Charge");
     }
 
+    private void AC_SpawnToCharge()
+    {
+        currentState = MinotaurState.CHARGE;
+        idleTurnTimer = 0f;
+        animator.SetTrigger("Idle");
+    }
+
     private void AC_StunToSmash()
     {
         currentState = MinotaurState.SMASH;
@@ -296,6 +308,12 @@ public class MinotaurManager : MonoBehaviour
         currentState = MinotaurState.CHARGE;
         if (smashObject)
             Destroy(smashObject);
+    }
+
+    private void AC_Dead()
+    {
+        FindObjectOfType<GameManager>().OnBossDeath(2);
+        //GetComponent<MinotaurManager>().enabled = false;
     }
 
     private void Hit()
@@ -353,8 +371,10 @@ public class MinotaurManager : MonoBehaviour
             spinTimer = 0f;
         }
         else if (currentState == MinotaurState.SPIN)
+        {
             currentState = MinotaurState.DEAD;
-
+            animator.SetTrigger("Death");
+        }
         d_cycleStateTrigger = !d_cycleStateTrigger;
     }
 }

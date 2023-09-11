@@ -103,25 +103,12 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     // Timers
     private float lastPressedJumpTimer; 
     private float lastOnGroundTimer;    
-    private float lastOnWallRightTimer; 
-    private float lastOnWallLeftTimer;  
-    private float lastOnWallTimer;
     private float iFramesTimer;
     private float attackTimer;
 
     // Sounds
     [Header("Sounds")]
     [SerializeField] private AudioClip audioClipRunning;
-
-
-    // Physics shit
-    private float speed = 3.0f;
-    private float jumpSpeed = 30.0f;
-
-    private Vector2 gravityMultiplier = new Vector2(0.0f, 1.0f);
-    private float gravityMag;
-    private bool gravityAltered = false;
-
 
     public enum Collectables
     {
@@ -152,7 +139,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
         gravityDirection = GravityDirection.DOWN;
         
         isGrounded = IsGrounded(Vector2.down);
-        gravityMag = Physics.gravity.y;
 
         currentHP = maxHP;
         OnHealthChange(currentHP);
@@ -163,13 +149,13 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
 
     private void Update()
     {
-        UpdateTimers();
-        HandleInput();
-        CheckCollisions();
-        CheckJumpState();
-        UpdateGravity();
-        UpdateAudioSource();
-        UpdateAnimation();
+        UpdateTimers();                 //
+        HandleInput();                  //
+        CheckCollisions();              //
+        CheckJumpState();               //
+        UpdateGravity();                //
+        UpdateAudioSource();            //
+        UpdateAnimation();              //
     }
 
     private void FixedUpdate()
@@ -180,9 +166,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
     private void UpdateTimers()
     {
         lastOnGroundTimer -= Time.deltaTime;
-        lastOnWallTimer -= Time.deltaTime;
-        lastOnWallRightTimer -= Time.deltaTime;
-        lastOnWallLeftTimer -= Time.deltaTime;
         lastPressedJumpTimer -= Time.deltaTime;
         iFramesTimer -= Time.deltaTime;
         attackTimer -= Time.deltaTime;
@@ -202,16 +185,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
                         if (IsGrounded(Vector2.down))
                             lastOnGroundTimer = coyoteTime;
 
-                        // Right Wall Check
-                        if (IsGrounded(Vector2.right))
-                            lastOnWallRightTimer = coyoteTime;
-
-                        // Left Wall Check
-                        if (IsGrounded(Vector2.left))
-                            lastOnWallLeftTimer = coyoteTime;
-
-                        // Two checks needed for both left and right walls since whenever the play turns the wall checkPoints swap sides
-                        lastOnWallTimer = Mathf.Max(lastOnWallLeftTimer, lastOnWallRightTimer);
                         break;
                     }
                 case GravityDirection.RIGHT:
@@ -219,27 +192,13 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
                         if (IsGrounded(Vector2.right))
                             lastOnGroundTimer = coyoteTime;
 
-                        if (IsGrounded(Vector2.up))
-                            lastOnWallRightTimer = coyoteTime;
-
-                        if (IsGrounded(Vector2.down))
-                            lastOnWallLeftTimer = coyoteTime;
-
-                        lastOnWallTimer = Mathf.Max(lastOnWallLeftTimer, lastOnWallRightTimer);
                         break;
                     }
                 case GravityDirection.UP:
                     {
                         if (IsGrounded(Vector2.up))
                             lastOnGroundTimer = coyoteTime;
-                        
-                        if (IsGrounded(Vector2.left))
-                            lastOnWallRightTimer = coyoteTime;
 
-                        if (IsGrounded(Vector2.right))
-                            lastOnWallLeftTimer = coyoteTime;
-
-                        lastOnWallTimer = Mathf.Max(lastOnWallLeftTimer, lastOnWallRightTimer);
                         break;
                     }
                 case GravityDirection.LEFT:
@@ -247,13 +206,6 @@ public class PlayerMovement : MonoBehaviour // Maybe change name to PlayerScript
                         if (IsGrounded(Vector2.left))
                             lastOnGroundTimer = coyoteTime;
 
-                        if (IsGrounded(Vector2.down))
-                            lastOnWallRightTimer = coyoteTime;
-
-                        if (IsGrounded(Vector2.up))
-                            lastOnWallLeftTimer = coyoteTime;
-
-                        lastOnWallTimer = Mathf.Max(lastOnWallLeftTimer, lastOnWallRightTimer);
                         break;
                     }
             }
