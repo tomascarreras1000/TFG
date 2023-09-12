@@ -51,7 +51,7 @@ public class GolemManager : MonoBehaviour
     private float deathRepositionSpeed = 3f;
 
     private bool isTransitioning;
-    private float transitionSpawn = 2f;
+    private float transitionSpawn = 3.5f;
     private float transitionLaser = 1f;
     private bool isSummonNotice;
 
@@ -150,7 +150,11 @@ public class GolemManager : MonoBehaviour
                 transform.position += new Vector3(0f, deathRepositionSpeed * Time.deltaTime, 0f);
             }
             else
+            {
                 transform.position = new Vector3(transform.position.x, deathHeight, transform.position.z);
+                FindObjectOfType<GameManager>().OnBossDeath(1);
+                GetComponent<GolemManager>().enabled = false;
+            }
         }
         if (debugDeathTrigger)
         {
@@ -179,8 +183,6 @@ public class GolemManager : MonoBehaviour
         currentState = GolemState.SUMMONING;
         isVulnerable = false;
 
-        Vector3 offset = new Vector3(3.5f, 0f, 0f);
-
         if (currentHP > 6)
         {
             Instantiate(isSummonNotice ? dustPrefab : golemitePrefab, golemiteSpawns[0].position, Quaternion.identity);
@@ -197,7 +199,7 @@ public class GolemManager : MonoBehaviour
         }
         else
         {
-            
+            Vector3 offset = new Vector3(3.5f, 0f, 0f);
             Instantiate(isSummonNotice ? dustPrefab : golemitePrefab, golemiteSpawns[0].position + offset, Quaternion.identity);
             Instantiate(isSummonNotice ? dustPrefab : golemitePrefab, golemiteSpawns[0].position - offset, Quaternion.identity);
             Instantiate(isSummonNotice ? dustPrefab : golemitePrefab, golemiteSpawns[1].position + offset, Quaternion.identity);
@@ -252,10 +254,11 @@ public class GolemManager : MonoBehaviour
             animator.SetTrigger("Invulnerable");
             StartTransition();
         }
+        else
+            animator.SetTrigger("Hurt");
 
         isVulnerable = false;
         iFramesTimer = 0f;
-        animator.SetTrigger("Hurt");
     }
 
     private void Death()
